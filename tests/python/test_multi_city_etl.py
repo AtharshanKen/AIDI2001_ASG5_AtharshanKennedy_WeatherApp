@@ -22,6 +22,26 @@ FAKE_FORECAST_RESPONSE = {
 
 
 class MultiCityEtlTests(unittest.TestCase):
+    def test_run_command_rejects_using_city_and_all_together(self) -> None:
+        stderr = io.StringIO()
+
+        with redirect_stderr(stderr):
+            exit_code = main(
+                [
+                    "run",
+                    "--city",
+                    "toronto",
+                    "--all",
+                    "--output-root",
+                    "ignored",
+                    "--run-date",
+                    "2026-04-07",
+                ]
+            )
+
+        self.assertEqual(exit_code, 2)
+        self.assertIn("not allowed with argument", stderr.getvalue())
+
     def test_run_command_with_all_writes_bronze_and_silver_for_every_supported_city(self) -> None:
         temp_root = Path("tests/.tmp")
         temp_root.mkdir(parents=True, exist_ok=True)
