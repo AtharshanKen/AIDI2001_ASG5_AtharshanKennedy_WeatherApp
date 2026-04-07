@@ -1,8 +1,4 @@
-const QUESTION_LABELS = [
-  "What does the weather in [City] look like for the next 30 days?",
-  "What is the average [Temp] in [City] for the next 7 days?",
-  "Which upcoming days in [City] are great for going out, and why?",
-];
+const { listSupportedQuestions } = require("./question_catalog");
 
 function buildDashboardViewModel({ cities, selectedCity, goldPayload, errorMessage = null }) {
   return {
@@ -12,7 +8,7 @@ function buildDashboardViewModel({ cities, selectedCity, goldPayload, errorMessa
     })),
     errorMessage,
     selectedCity,
-    questionLabels: [...QUESTION_LABELS],
+    questionLabels: listSupportedQuestions().map((question) => question.label),
     forecastRows: goldPayload.daily_forecasts.map((forecast) => ({
       date: forecast.date,
       avgTemp: `${forecast.avg_temp.toFixed(1)} C`,
