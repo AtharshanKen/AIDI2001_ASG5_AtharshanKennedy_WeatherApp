@@ -1,7 +1,10 @@
 const express = require("express");
 
 const { UnsupportedCityError, getCity, listCities } = require("./city_catalog");
+const { answerQuestion } = require("./answer_engine");
+const { formatAnswer } = require("./answer_formatter");
 const { buildDashboardViewModel } = require("./dashboard_view_model");
+const { UnsupportedQuestionError } = require("./question_catalog");
 const { createSampleGoldRepository } = require("./sample_gold_repository");
 const { renderDashboardPage } = require("./render_dashboard");
 
@@ -12,6 +15,9 @@ function createApp({ goldRepository = createSampleGoldRepository() } = {}) {
     try {
       let selectedCity = getCity("toronto");
       let errorMessage = null;
+      let errorTitle = "Unsupported city";
+      let selectedQuestionId = null;
+      let answerCard = null;
 
       if (request.query.city) {
         try {
@@ -22,12 +28,45 @@ function createApp({ goldRepository = createSampleGoldRepository() } = {}) {
           }
 
           errorMessage = error.message;
+          errorTitle = "Unsupported city";
         }
       }
 
       const goldPayload = await goldRepository.readCityForecast(selectedCity.key);
+
+      if (request.query.questionId) {
+        selectedQuestionId = request.query.questionId;
+
+        try {
+          const answerPayload = answerQuestion({
+            city: selectedCity.key,
+            questionId: selectedQuestionId,
+            goldPayload,
+          });
+
+          answerCard = {
+            heading: "Answer",
+            questionLabel: answerPayload.questionLabel,
+            text: await formatAnswer({
+              answerPayload,
+              openAiEnabled: false,
+            }),
+          };
+        } catch (error) {
+          if (!(error instanceof UnsupportedQuestionError)) {
+            throw error;
+          }
+
+          errorMessage = error.message;
+          errorTitle = "Unsupported question";
+        }
+      }
+
       const viewModel = buildDashboardViewModel({
+        answerCard,
         cities: listCities(),
+        errorTitle,
+        selectedQuestionId,
         selectedCity,
         goldPayload,
         errorMessage,

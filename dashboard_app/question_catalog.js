@@ -13,6 +13,13 @@ const SUPPORTED_QUESTIONS = [
   },
 ];
 
+class UnsupportedQuestionError extends Error {
+  constructor(questionId) {
+    super(`Question "${questionId}" is not supported.`);
+    this.name = "UnsupportedQuestionError";
+  }
+}
+
 function listSupportedQuestions() {
   return SUPPORTED_QUESTIONS.map((question) => ({ ...question }));
 }
@@ -21,7 +28,7 @@ function getQuestionById(questionId) {
   const question = SUPPORTED_QUESTIONS.find((entry) => entry.id === questionId);
 
   if (!question) {
-    throw new Error(`Question "${questionId}" is not supported.`);
+    throw new UnsupportedQuestionError(questionId);
   }
 
   return { ...question };
@@ -30,4 +37,5 @@ function getQuestionById(questionId) {
 module.exports = {
   getQuestionById,
   listSupportedQuestions,
+  UnsupportedQuestionError,
 };

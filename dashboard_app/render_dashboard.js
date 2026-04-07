@@ -19,11 +19,26 @@ function renderDashboardPage(viewModel) {
     )
     .join("");
 
-  const questionButtons = viewModel.questionLabels
-    .map((questionLabel) => `<button type="button" class="question-button">${questionLabel}</button>`)
+  const questionButtons = viewModel.questions
+    .map(
+      (question) => `
+        <form method="get" action="${question.url}">
+          <button type="submit" class="question-button${question.selected ? " question-button-active" : ""}">
+            ${question.label}
+          </button>
+        </form>`,
+    )
     .join("");
   const errorBanner = viewModel.errorMessage
-    ? `<div class="error-banner" role="alert"><strong>Unsupported city</strong><p>${viewModel.errorMessage}</p></div>`
+    ? `<div class="error-banner" role="alert"><strong>${viewModel.errorTitle}</strong><p>${viewModel.errorMessage}</p></div>`
+    : "";
+  const answerCard = viewModel.answerCard
+    ? `
+        <section class="answer-card" aria-live="polite">
+          <p class="eyebrow">${viewModel.answerCard.heading}</p>
+          <h2>${viewModel.answerCard.questionLabel}</h2>
+          <p>${viewModel.answerCard.text}</p>
+        </section>`
     : "";
 
   return `<!doctype html>
@@ -112,7 +127,7 @@ function renderDashboardPage(viewModel) {
         border: 1px solid var(--border);
         border-radius: 18px;
         margin-top: 1rem;
-        max-height: 32rem;
+        max-height: 12rem;
         overflow-y: auto;
         overflow-x: auto;
       }
@@ -135,6 +150,22 @@ function renderDashboardPage(viewModel) {
       .question-list {
         display: grid;
         gap: 0.75rem;
+      }
+
+      .question-button-active {
+        background: var(--accent-soft);
+        border-color: rgba(47, 124, 99, 0.45);
+      }
+
+      .answer-card {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        margin-top: 1rem;
+        padding: 1rem;
+      }
+
+      .answer-card p:last-child {
+        margin-bottom: 0;
       }
 
       .error-banner {
@@ -191,6 +222,7 @@ function renderDashboardPage(viewModel) {
           <p class="eyebrow">Questions</p>
           <h2>Questions</h2>
           <div class="question-list">${questionButtons}</div>
+          ${answerCard}
         </section>
       </aside>
     </main>
