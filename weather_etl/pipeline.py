@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 from weather_etl import forecast_client
-from weather_etl.city_catalog import get_city
+from weather_etl.city_catalog import SUPPORTED_CITIES, get_city
 
 
 def run_one_city(city_key: str, output_root: Path, run_date: str) -> None:
@@ -27,6 +27,14 @@ def run_one_city(city_key: str, output_root: Path, run_date: str) -> None:
             "daily_forecasts": silver_records,
         },
     )
+
+
+def run_all_cities(output_root: Path, run_date: str) -> None:
+    for city_key in SUPPORTED_CITIES:
+        try:
+            run_one_city(city_key=city_key, output_root=output_root, run_date=run_date)
+        except Exception as error:
+            raise ValueError(f"Failed to process city {city_key}: {error}") from error
 
 
 def build_silver_records(raw_payload: dict) -> list[dict]:
