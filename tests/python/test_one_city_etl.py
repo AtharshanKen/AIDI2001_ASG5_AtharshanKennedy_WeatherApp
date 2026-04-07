@@ -20,6 +20,40 @@ FAKE_FORECAST_RESPONSE = {
 
 
 class OneCityEtlTests(unittest.TestCase):
+    def test_run_command_with_city_only_processes_the_requested_city(self) -> None:
+        temp_root = Path("tests/.tmp")
+        temp_root.mkdir(parents=True, exist_ok=True)
+
+        with tempfile.TemporaryDirectory(dir=temp_root) as temp_dir:
+            output_root = Path(temp_dir)
+
+            with patch(
+                "weather_etl.forecast_client.fetch_forecast",
+                return_value=FAKE_FORECAST_RESPONSE,
+            ) as fetch_forecast:
+                exit_code = main(
+                    [
+                        "run",
+                        "--city",
+                        "toronto",
+                        "--output-root",
+                        str(output_root),
+                        "--run-date",
+                        "2026-04-07",
+                    ]
+                )
+
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(fetch_forecast.call_count, 1)
+            self.assertTrue((output_root / "bronze" / "toronto_2026-04-07.json").exists())
+            self.assertTrue(
+                (output_root / "silver" / "toronto_forecast_2026-04-07.json").exists()
+            )
+            self.assertFalse((output_root / "bronze" / "ottawa_2026-04-07.json").exists())
+            self.assertFalse(
+                (output_root / "silver" / "ottawa_forecast_2026-04-07.json").exists()
+            )
+
     def test_run_command_writes_bronze_and_silver_artifacts_for_supported_city(self) -> None:
         temp_root = Path("tests/.tmp")
         temp_root.mkdir(parents=True, exist_ok=True)
