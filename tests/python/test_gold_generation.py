@@ -38,6 +38,33 @@ class GoldGenerationTests(unittest.TestCase):
             },
         )
 
+    def test_generate_gold_payload_builds_grounded_not_good_reason_from_weather_factors(self) -> None:
+        silver_payload = {
+            "metadata": {"city": "toronto", "run_date": "2026-04-07"},
+            "daily_forecasts": [
+                {
+                    "date": "2026-04-09",
+                    "temp_min": 4.0,
+                    "temp_max": 10.0,
+                    "precipitation_sum": 8.0,
+                    "wind_speed_max": 42.0,
+                    "weather_code": 63,
+                }
+            ],
+        }
+
+        gold_payload = generate_gold_payload(silver_payload)
+        gold_record = gold_payload["daily_forecasts"][0]
+
+        self.assertEqual(gold_record["avg_temp"], 7.0)
+        self.assertEqual(gold_record["weather_condition"], "Rain")
+        self.assertEqual(gold_record["outing_label"], "Not Good")
+        self.assertEqual(gold_record["outing_score"], 1)
+        self.assertEqual(
+            gold_record["outing_reason"],
+            "Rain with 8.0 mm precipitation, 42.0 km/h wind, and a cool 7.0 C average temperature.",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

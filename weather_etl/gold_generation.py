@@ -45,7 +45,13 @@ def transform_daily_record(record: dict) -> dict:
         "weather_condition": weather_condition,
         "outing_score": score_for_label(outing_label),
         "outing_label": outing_label,
-        "outing_reason": build_outing_reason(weather_condition, outing_label),
+        "outing_reason": build_outing_reason(
+            weather_condition=weather_condition,
+            outing_label=outing_label,
+            precipitation_sum=record["precipitation_sum"],
+            wind_speed_max=record["wind_speed_max"],
+            avg_temp=avg_temp,
+        ),
     }
 
 
@@ -74,7 +80,14 @@ def score_for_label(outing_label: str) -> int:
     return 1
 
 
-def build_outing_reason(weather_condition: str, outing_label: str) -> str:
+def build_outing_reason(
+    *,
+    weather_condition: str,
+    outing_label: str,
+    precipitation_sum: float,
+    wind_speed_max: float,
+    avg_temp: float,
+) -> str:
     if outing_label == "Great Day":
         return (
             f"{weather_condition.lower()} with comfortable temperatures, low wind, "
@@ -82,4 +95,7 @@ def build_outing_reason(weather_condition: str, outing_label: str) -> str:
         ).capitalize()
     if outing_label == "Okay Day":
         return f"{weather_condition} with manageable wind and precipitation."
-    return f"{weather_condition} with conditions that are not ideal for going out."
+    return (
+        f"{weather_condition} with {precipitation_sum:.1f} mm precipitation, "
+        f"{wind_speed_max:.1f} km/h wind, and a cool {avg_temp:.1f} C average temperature."
+    )
