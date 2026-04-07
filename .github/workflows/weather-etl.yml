@@ -1,0 +1,43 @@
+name: Weather ETL
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_date:
+        description: Optional ETL run date in YYYY-MM-DD format
+        required: false
+      storage_mode:
+        description: Storage mode to use for this run
+        required: false
+        default: local
+  schedule:
+    - cron: '0 12 * * *'
+
+jobs:
+  run-weather-etl:
+    runs-on: ubuntu-latest
+    env:
+      WEATHER_STORAGE_MODE: ${{ vars.WEATHER_STORAGE_MODE }}
+      WEATHER_BUCKET_NAME: ${{ vars.WEATHER_BUCKET_NAME }}
+      WEATHER_BUCKET_PREFIX: ${{ vars.WEATHER_BUCKET_PREFIX }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run ETL for all supported cities
+        shell: bash
+        env:
+          RUN_DATE_INPUT: ${{ github.event.inputs.run_date }}
+          STORAGE_MODE_INPUT: ${{ github.event.inputs.storage_mode }}
+        run: |
+          RUN_DATE="${RUN_DATE_INPUT:-$(date -u +%F)}"
+          export WEATHER_STORAGE_MODE="${STORAGE_MODE_INPUT:-${WEATHER_STORAGE_MODE:-local}}"
+          python -m weather_etl.cli run --all --output-root data/local --run-date "$RUN_DATE"
