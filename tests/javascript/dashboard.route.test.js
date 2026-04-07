@@ -165,3 +165,22 @@ test("GET / uses built-in sample Gold data for other supported cities in local m
   assert.match(html, /Rain/);
   assert.match(html, /Not Good/);
 });
+
+test("GET / in local mode renders a full 30-day forecast table for the selected city", async (t) => {
+  const app = createApp();
+  const server = await startServer(app);
+
+  t.after(async () => {
+    await stopServer(server);
+  });
+
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/`);
+  const html = await response.text();
+  const bodyMatch = html.match(/<tbody>([\s\S]*?)<\/tbody>/);
+  const rowCount = bodyMatch ? (bodyMatch[1].match(/<tr>/g) || []).length : 0;
+
+  assert.equal(response.status, 200);
+  assert.equal(rowCount, 30);
+  assert.match(html, /2026-04-08/);
+  assert.match(html, /2026-05-07/);
+});
