@@ -1,12 +1,20 @@
-import json
 from pathlib import Path
 
 from weather_etl import forecast_client
 from weather_etl.city_catalog import SUPPORTED_CITIES, get_city
 from weather_etl.gold_generation import generate_gold_payload
+from weather_etl.storage import LocalArtifactStorage
 
 
-def run_one_city(city_key: str, output_root: Path, run_date: str) -> None:
+def run_one_city(
+    city_key: str,
+    output_root: Path | None = None,
+    run_date: str | None = None,
+    storage=None,
+) -> None:
+    if run_date is None:
+        raise ValueError("run_date is required")
+
     city = get_city(city_key)
     raw_payload = forecast_client.fetch_forecast(city)
     silver_records = build_silver_records(raw_payload)
@@ -15,29 +23,39 @@ def run_one_city(city_key: str, output_root: Path, run_date: str) -> None:
         "daily_forecasts": silver_records,
     }
     gold_payload = generate_gold_payload(silver_payload)
+    storage = resolve_storage(output_root=output_root, storage=storage)
+    artifact_keys = build_artifact_keys(city_id=city["id"], run_date=run_date)
 
-    bronze_path = output_root / "bronze" / f"{city['id']}_{run_date}.json"
-    silver_path = output_root / "silver" / f"{city['id']}_forecast_{run_date}.json"
-    gold_path = output_root / "gold" / f"{city['id']}_activity_forecast_{run_date}.json"
-
-    write_json(
-        bronze_path,
+    storage.write_json(
+        artifact_keys["bronze"],
         {
             "metadata": {"city": city["id"], "run_date": run_date},
             "raw_response": raw_payload,
         },
     )
-    write_json(
-        silver_path,
+    storage.write_json(
+        artifact_keys["silver"],
         silver_payload,
     )
-    write_json(gold_path, gold_payload)
+    storage.write_json(artifact_keys["gold"], gold_payload)
 
 
-def run_all_cities(output_root: Path, run_date: str) -> None:
+def run_all_cities(
+    output_root: Path | None = None,
+    run_date: str | None = None,
+    storage=None,
+) -> None:
+    if run_date is None:
+        raise ValueError("run_date is required")
+
     for city_key in SUPPORTED_CITIES:
         try:
-            run_one_city(city_key=city_key, output_root=output_root, run_date=run_date)
+            run_one_city(
+                city_key=city_key,
+                output_root=output_root,
+                run_date=run_date,
+                storage=storage,
+            )
         except Exception as error:
             raise ValueError(f"Failed to process city {city_key}: {error}") from error
 
@@ -79,6 +97,17 @@ def build_silver_records(raw_payload: dict) -> list[dict]:
     return records
 
 
-def write_json(path: Path, payload: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+def build_artifact_keys(city_id: str, run_date: str) -> dict[str, str]:
+    return {
+        "bronze": f"bronze/{city_id}_{run_date}.json",
+        "silver": f"silver/{city_id}_forecast_{run_date}.json",
+        "gold": f"gold/{city_id}_activity_forecast_{run_date}.json",
+    }
+
+
+def resolve_storage(output_root: Path | None, storage):
+    if storage is not None:
+        return storage
+    if output_root is None:
+        raise ValueError("output_root is required when no storage is provided")
+    return LocalArtifactStorage(output_root)
