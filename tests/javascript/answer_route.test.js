@@ -60,7 +60,7 @@ test("GET / with a supported question renders a readable fallback answer for the
   assert.equal(response.status, 200);
   assert.match(html, /Answer/);
   assert.match(html, /The next 7-day average temperature in Toronto is 16.0 C\./);
-  assert.match(html, /questionId=q2_7_day_average_temp/);
+  assert.match(html, /question-button-active/);
 });
 
 test("GET / with an unsupported question renders a clear question-specific error state", async (t) => {

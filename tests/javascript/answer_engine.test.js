@@ -30,7 +30,7 @@ test("answer engine returns a deterministic payload for the 7-day average temper
     {
       questionId: "q2_7_day_average_temp",
       city: "toronto",
-      questionLabel: "What is the average [Temp] in [City] for the next 7 days?",
+      questionLabel: "What is the average temperature for the next 7 days?",
       answerType: "seven_day_average_temp",
       facts: {
         daysConsidered: 7,
@@ -86,7 +86,7 @@ test("answer engine returns only upcoming Great Day rows and grounded reasons fo
     {
       questionId: "q3_great_outdoor_days",
       city: "toronto",
-      questionLabel: "Which upcoming days in [City] are great for going out, and why?",
+      questionLabel: "Which upcoming days are great for going out, and why?",
       answerType: "great_outdoor_days",
       facts: {
         totalGreatDays: 2,
@@ -134,7 +134,7 @@ test("answer engine returns a deterministic 30-day outlook summary from Gold rec
     {
       questionId: "q1_30_day_outlook",
       city: "toronto",
-      questionLabel: "What does the weather in [City] look like for the next 30 days?",
+      questionLabel: "What does the weather look like for the next 30 days?",
       answerType: "thirty_day_outlook",
       facts: {
         totalDays: 4,

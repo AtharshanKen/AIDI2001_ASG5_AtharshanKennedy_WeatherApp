@@ -86,12 +86,9 @@ test("GET / renders the dashboard shell with a selected city and forecast table"
   assert.match(html, /Mainly Clear/);
   assert.match(html, /Great Day/);
   assert.match(html, /Questions/);
-  assert.match(html, /What does the weather in \[City\] look like for the next 30 days\?/);
-  assert.match(html, /What is the average \[Temp\] in \[City\] for the next 7 days\?/);
-  assert.match(
-    html,
-    /Which upcoming days in \[City\] are great for going out, and why\?/,
-  );
+  assert.match(html, /What does the weather look like for the next 30 days\?/);
+  assert.match(html, /What is the average temperature for the next 7 days\?/);
+  assert.match(html, /Which upcoming days are great for going out, and why\?/);
 });
 
 test("GET / with an unsupported city renders a graceful dashboard error state", async (t) => {
@@ -183,7 +180,28 @@ test("GET / in local mode renders a full 30-day forecast table for the selected 
   assert.equal(rowCount, 30);
   assert.match(html, /2026-04-08/);
   assert.match(html, /2026-05-07/);
+  assert.match(html, /--dashboard-city-panel-height:\s*264px;/);
+  assert.match(html, /--dashboard-question-panel-height:\s*380px;/);
+  assert.match(html, /--dashboard-sidebar-gap:\s*1\.5rem;/);
+  assert.match(html, /class="panel forecast-panel"/);
+  assert.match(html, /class="sidebar-stack"/);
+  assert.match(html, /class="panel city-panel"/);
+  assert.match(html, /class="panel question-panel"/);
   assert.match(html, /class="forecast-table-scroll"/);
-  assert.match(html, /\.forecast-table-scroll\s*\{[\s\S]*max-height:\s*12rem;/);
+  assert.match(html, /main\s*\{[\s\S]*align-items:\s*stretch;/);
+  assert.match(html, /\.forecast-panel\s*\{[\s\S]*display:\s*flex;/);
+  assert.match(html, /\.forecast-panel\s*\{[\s\S]*flex-direction:\s*column;/);
+  assert.match(html, /\.forecast-panel\s*\{[\s\S]*height:\s*var\(--dashboard-column-height\);/);
+  assert.match(html, /\.sidebar-stack\s*\{[\s\S]*display:\s*grid;/);
+  assert.match(
+    html,
+    /\.sidebar-stack\s*\{[\s\S]*grid-template-rows:\s*var\(--dashboard-city-panel-height\)\s*var\(--dashboard-question-panel-height\);/,
+  );
+  assert.match(html, /\.sidebar-stack\s*\{[\s\S]*height:\s*var\(--dashboard-column-height\);/);
+  assert.match(html, /\.city-panel\s*\{[\s\S]*height:\s*var\(--dashboard-city-panel-height\);/);
+  assert.match(html, /\.question-panel\s*\{[\s\S]*height:\s*var\(--dashboard-question-panel-height\);/);
+  assert.match(html, /\.question-panel\s*\{[\s\S]*overflow-y:\s*auto;/);
+  assert.match(html, /\.forecast-table-scroll\s*\{[\s\S]*flex:\s*1 1 auto;/);
+  assert.match(html, /\.forecast-table-scroll\s*\{[\s\S]*min-height:\s*0;/);
   assert.match(html, /\.forecast-table-scroll\s*\{[\s\S]*overflow-y:\s*auto;/);
 });

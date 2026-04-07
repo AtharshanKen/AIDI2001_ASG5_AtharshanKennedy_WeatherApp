@@ -1,5 +1,9 @@
 const { defineConfig } = require("@playwright/test");
 
+const appPort = process.env.PLAYWRIGHT_APP_PORT || "3100";
+const appUrl = `http://127.0.0.1:${appPort}`;
+const reuseExistingServer = process.env.PLAYWRIGHT_FRESH_SERVER === "1" ? false : true;
+
 module.exports = defineConfig({
   testDir: "./tests/playwright",
   fullyParallel: false,
@@ -8,7 +12,7 @@ module.exports = defineConfig({
   workers: 1,
   reporter: "list",
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: appUrl,
     browserName: "chromium",
     channel: "msedge",
     headless: false,
@@ -18,8 +22,12 @@ module.exports = defineConfig({
   },
   webServer: {
     command: "npm start",
-    url: "http://127.0.0.1:3000",
-    reuseExistingServer: true,
+    env: {
+      ...process.env,
+      PORT: appPort,
+    },
+    url: appUrl,
+    reuseExistingServer,
     timeout: 120000,
   },
 });

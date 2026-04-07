@@ -6,7 +6,7 @@ const { formatAnswer } = require("../../dashboard_app/answer_formatter");
 const ANSWER_PAYLOAD = {
   questionId: "q2_7_day_average_temp",
   city: "toronto",
-  questionLabel: "What is the average [Temp] in [City] for the next 7 days?",
+  questionLabel: "What is the average temperature for the next 7 days?",
   answerType: "seven_day_average_temp",
   facts: {
     averageTempC: 16.0,

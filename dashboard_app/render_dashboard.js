@@ -22,7 +22,9 @@ function renderDashboardPage(viewModel) {
   const questionButtons = viewModel.questions
     .map(
       (question) => `
-        <form method="get" action="${question.url}">
+        <form method="get" action="/">
+          <input type="hidden" name="city" value="${viewModel.selectedCity.key}">
+          <input type="hidden" name="questionId" value="${question.id}">
           <button type="submit" class="question-button${question.selected ? " question-button-active" : ""}">
             ${question.label}
           </button>
@@ -56,6 +58,14 @@ function renderDashboardPage(viewModel) {
         --accent-soft: #d7efe3;
         --panel: rgba(255, 255, 255, 0.92);
         --border: rgba(31, 45, 61, 0.14);
+        --dashboard-city-panel-height: 264px;
+        --dashboard-question-panel-height: 380px;
+        --dashboard-sidebar-gap: 1.5rem;
+        --dashboard-column-height: calc(
+          var(--dashboard-city-panel-height) +
+          var(--dashboard-question-panel-height) +
+          var(--dashboard-sidebar-gap)
+        );
       }
 
       * {
@@ -76,6 +86,7 @@ function renderDashboardPage(viewModel) {
         display: grid;
         gap: 1.5rem;
         grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+        align-items: stretch;
         padding: 2rem;
       }
 
@@ -85,6 +96,33 @@ function renderDashboardPage(viewModel) {
         border-radius: 20px;
         box-shadow: 0 22px 60px rgba(31, 45, 61, 0.12);
         padding: 1.5rem;
+      }
+
+      .forecast-panel {
+        display: flex;
+        flex-direction: column;
+        height: var(--dashboard-column-height);
+        min-height: 0;
+      }
+
+      .sidebar-stack {
+        display: grid;
+        gap: var(--dashboard-sidebar-gap);
+        grid-template-rows:
+          var(--dashboard-city-panel-height)
+          var(--dashboard-question-panel-height);
+        height: var(--dashboard-column-height);
+        min-height: 0;
+      }
+
+      .question-panel {
+        height: var(--dashboard-question-panel-height);
+        min-height: 0;
+        overflow-y: auto;
+      }
+
+      .city-panel {
+        height: var(--dashboard-city-panel-height);
       }
 
       h1,
@@ -127,7 +165,8 @@ function renderDashboardPage(viewModel) {
         border: 1px solid var(--border);
         border-radius: 18px;
         margin-top: 1rem;
-        max-height: 12rem;
+        flex: 1 1 auto;
+        min-height: 0;
         overflow-y: auto;
         overflow-x: auto;
       }
@@ -183,13 +222,29 @@ function renderDashboardPage(viewModel) {
       @media (max-width: 900px) {
         main {
           grid-template-columns: 1fr;
+          align-items: start;
+        }
+
+        .forecast-panel,
+        .sidebar-stack {
+          height: auto;
+        }
+
+        .city-panel,
+        .question-panel {
+          height: auto;
+        }
+
+        .forecast-table-scroll {
+          flex: initial;
+          min-height: 16rem;
         }
       }
     </style>
   </head>
   <body>
     <main>
-      <section class="panel">
+      <section class="panel forecast-panel">
         <p class="eyebrow">Weather App</p>
         <h1>Weather Activity Dashboard</h1>
         ${errorBanner}
@@ -209,8 +264,8 @@ function renderDashboardPage(viewModel) {
           </table>
         </div>
       </section>
-      <aside>
-        <section class="panel">
+      <aside class="sidebar-stack">
+        <section class="panel city-panel">
           <p class="eyebrow">City Selection</p>
           <form method="get" action="/">
             <label for="city">Choose a city</label>
@@ -218,7 +273,7 @@ function renderDashboardPage(viewModel) {
             <button type="submit">View Forecast</button>
           </form>
         </section>
-        <section class="panel">
+        <section class="panel question-panel">
           <p class="eyebrow">Questions</p>
           <h2>Questions</h2>
           <div class="question-list">${questionButtons}</div>
