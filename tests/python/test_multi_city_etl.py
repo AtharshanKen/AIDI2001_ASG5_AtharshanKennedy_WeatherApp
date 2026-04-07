@@ -1,4 +1,5 @@
 import io
+import json
 import tempfile
 import unittest
 from contextlib import redirect_stderr
@@ -106,6 +107,55 @@ class MultiCityEtlTests(unittest.TestCase):
             self.assertEqual(exit_code, 1)
             self.assertIn("Failed to process city vancouver", stderr.getvalue())
             self.assertIn("upstream timeout", stderr.getvalue())
+
+    def test_run_command_with_all_writes_gold_artifacts_for_every_supported_city(self) -> None:
+        temp_root = Path("tests/.tmp")
+        temp_root.mkdir(parents=True, exist_ok=True)
+
+        with tempfile.TemporaryDirectory(dir=temp_root) as temp_dir:
+            output_root = Path(temp_dir)
+
+            with patch(
+                "weather_etl.forecast_client.fetch_forecast",
+                return_value=FAKE_FORECAST_RESPONSE,
+            ):
+                exit_code = main(
+                    [
+                        "run",
+                        "--all",
+                        "--output-root",
+                        str(output_root),
+                        "--run-date",
+                        "2026-04-07",
+                    ]
+                )
+
+            for city_key in SUPPORTED_CITIES:
+                gold_path = output_root / "gold" / f"{city_key}_activity_forecast_2026-04-07.json"
+                self.assertTrue(gold_path.exists())
+
+            toronto_gold_path = (
+                output_root / "gold" / "toronto_activity_forecast_2026-04-07.json"
+            )
+            toronto_gold_payload = json.loads(toronto_gold_path.read_text(encoding="utf-8"))
+
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(
+                toronto_gold_payload,
+                {
+                    "metadata": {"city": "toronto", "run_date": "2026-04-07"},
+                    "daily_forecasts": [
+                        {
+                            "date": "2026-04-08",
+                            "avg_temp": 10.5,
+                            "weather_condition": "Mainly Clear",
+                            "outing_score": 2,
+                            "outing_label": "Okay Day",
+                            "outing_reason": "Mainly Clear with manageable wind and precipitation.",
+                        }
+                    ],
+                },
+            )
 
 
 if __name__ == "__main__":

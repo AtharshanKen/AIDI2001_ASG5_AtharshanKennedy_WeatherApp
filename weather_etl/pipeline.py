@@ -3,15 +3,22 @@ from pathlib import Path
 
 from weather_etl import forecast_client
 from weather_etl.city_catalog import SUPPORTED_CITIES, get_city
+from weather_etl.gold_generation import generate_gold_payload
 
 
 def run_one_city(city_key: str, output_root: Path, run_date: str) -> None:
     city = get_city(city_key)
     raw_payload = forecast_client.fetch_forecast(city)
     silver_records = build_silver_records(raw_payload)
+    silver_payload = {
+        "metadata": {"city": city["id"], "run_date": run_date},
+        "daily_forecasts": silver_records,
+    }
+    gold_payload = generate_gold_payload(silver_payload)
 
     bronze_path = output_root / "bronze" / f"{city['id']}_{run_date}.json"
     silver_path = output_root / "silver" / f"{city['id']}_forecast_{run_date}.json"
+    gold_path = output_root / "gold" / f"{city['id']}_activity_forecast_{run_date}.json"
 
     write_json(
         bronze_path,
@@ -22,11 +29,9 @@ def run_one_city(city_key: str, output_root: Path, run_date: str) -> None:
     )
     write_json(
         silver_path,
-        {
-            "metadata": {"city": city["id"], "run_date": run_date},
-            "daily_forecasts": silver_records,
-        },
+        silver_payload,
     )
+    write_json(gold_path, gold_payload)
 
 
 def run_all_cities(output_root: Path, run_date: str) -> None:

@@ -162,6 +162,50 @@ class OneCityEtlTests(unittest.TestCase):
                 ],
             )
 
+    def test_run_command_writes_gold_artifact_with_app_ready_fields(self) -> None:
+        temp_root = Path("tests/.tmp")
+        temp_root.mkdir(parents=True, exist_ok=True)
+
+        with tempfile.TemporaryDirectory(dir=temp_root) as temp_dir:
+            output_root = Path(temp_dir)
+
+            with patch(
+                "weather_etl.forecast_client.fetch_forecast",
+                return_value=FAKE_FORECAST_RESPONSE,
+            ):
+                exit_code = main(
+                    [
+                        "run",
+                        "--city",
+                        "toronto",
+                        "--output-root",
+                        str(output_root),
+                        "--run-date",
+                        "2026-04-07",
+                    ]
+                )
+
+            gold_path = output_root / "gold" / "toronto_activity_forecast_2026-04-07.json"
+            gold_payload = json.loads(gold_path.read_text(encoding="utf-8"))
+
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(
+                gold_payload,
+                {
+                    "metadata": {"city": "toronto", "run_date": "2026-04-07"},
+                    "daily_forecasts": [
+                        {
+                            "date": "2026-04-08",
+                            "avg_temp": 10.5,
+                            "weather_condition": "Mainly Clear",
+                            "outing_score": 2,
+                            "outing_label": "Okay Day",
+                            "outing_reason": "Mainly Clear with manageable wind and precipitation.",
+                        }
+                    ],
+                },
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
