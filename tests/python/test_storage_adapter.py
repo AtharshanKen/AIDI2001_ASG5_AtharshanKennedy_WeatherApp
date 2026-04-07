@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 
+from weather_etl.cli import main
 from weather_etl.pipeline import run_one_city
 from weather_etl.storage import GcpBucketArtifactStorage
 
@@ -47,6 +48,46 @@ class FakeBucket:
 
 
 class StorageAdapterTests(unittest.TestCase):
+    def test_run_command_can_select_gcp_storage_from_environment(self) -> None:
+        bucket = FakeBucket()
+
+        with patch.dict(
+            "os.environ",
+            {
+                "WEATHER_STORAGE_MODE": "gcp",
+                "WEATHER_BUCKET_NAME": "assignment-weather",
+                "WEATHER_BUCKET_PREFIX": "weather-demo",
+            },
+            clear=False,
+        ):
+            with patch(
+                "weather_etl.forecast_client.fetch_forecast",
+                return_value=FAKE_FORECAST_RESPONSE,
+            ):
+                with patch(
+                    "weather_etl.storage.load_google_cloud_bucket",
+                    return_value=bucket,
+                ):
+                    exit_code = main(
+                        [
+                            "run",
+                            "--city",
+                            "toronto",
+                            "--output-root",
+                            "unused-local-path",
+                            "--run-date",
+                            "2026-04-07",
+                        ]
+                    )
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("weather-demo/bronze/toronto_2026-04-07.json", bucket.blobs)
+        self.assertIn("weather-demo/silver/toronto_forecast_2026-04-07.json", bucket.blobs)
+        self.assertIn(
+            "weather-demo/gold/toronto_activity_forecast_2026-04-07.json",
+            bucket.blobs,
+        )
+
     def test_gcp_bucket_storage_uploads_json_to_prefixed_blob_key(self) -> None:
         bucket = FakeBucket()
         storage = GcpBucketArtifactStorage(bucket=bucket, prefix="weather-data")

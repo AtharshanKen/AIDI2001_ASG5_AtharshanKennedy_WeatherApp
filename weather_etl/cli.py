@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 from weather_etl.pipeline import run_all_cities, run_one_city
+from weather_etl.storage import create_storage_from_environment
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -28,16 +29,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "run":
         try:
+            storage = create_storage_from_environment(output_root=Path(args.output_root))
             if args.all:
                 run_all_cities(
-                    output_root=Path(args.output_root),
                     run_date=args.run_date,
+                    storage=storage,
                 )
             else:
                 run_one_city(
                     city_key=args.city,
-                    output_root=Path(args.output_root),
                     run_date=args.run_date,
+                    storage=storage,
                 )
         except Exception as error:
             print(error, file=sys.stderr)
