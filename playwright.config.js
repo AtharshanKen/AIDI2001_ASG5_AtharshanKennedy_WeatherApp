@@ -4,6 +4,7 @@ module.exports = defineConfig({
   testDir: "./tests/playwright",
   fullyParallel: false,
   retries: 0,
+  timeout: process.env.PLAYWRIGHT_HOLD_OPEN === "1" ? 0 : 30000,
   workers: 1,
   reporter: "list",
   use: {

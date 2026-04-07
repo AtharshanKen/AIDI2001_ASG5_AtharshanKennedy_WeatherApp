@@ -7,6 +7,7 @@ const args = ["run", "test:playwright", "--", ...process.argv.slice(2)];
 const child = spawn(npmCommand, args, {
   cwd: path.resolve(__dirname, ".."),
   stdio: "inherit",
+  shell: process.platform === "win32",
   env: {
     ...process.env,
     PLAYWRIGHT_HOLD_OPEN: "1",

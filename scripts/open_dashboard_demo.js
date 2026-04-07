@@ -35,12 +35,7 @@ async function main() {
 }
 
 function startServer() {
-  const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
-
-  return spawn(npmCommand, ["start"], {
-    cwd: path.resolve(__dirname, ".."),
-    stdio: "inherit",
-  });
+  return spawnNpm(["start"]);
 }
 
 async function waitForServer(url) {
@@ -67,6 +62,16 @@ function stopServer(serverProcess) {
   if (!serverProcess.killed) {
     serverProcess.kill();
   }
+}
+
+function spawnNpm(args) {
+  const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+
+  return spawn(npmCommand, args, {
+    cwd: path.resolve(__dirname, ".."),
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
 }
 
 process.on("SIGINT", () => {

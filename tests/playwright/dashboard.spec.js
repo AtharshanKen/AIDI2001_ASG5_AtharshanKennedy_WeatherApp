@@ -28,11 +28,11 @@ test("dashboard renders in headed mode and city selection updates the forecast v
 test("unsupported city query shows a visible error banner and safe Toronto fallback", async ({
   page,
 }) => {
-  await page.goto("/?city=halifax");
+  await page.goto("/?city=invalid-city");
 
   await expect(page.getByRole("heading", { name: "Weather Activity Dashboard" })).toBeVisible();
   await expect(page.getByRole("alert")).toContainText("Unsupported city");
-  await expect(page.getByRole("alert")).toContainText('City "halifax" is not supported.');
+  await expect(page.getByRole("alert")).toContainText('City "invalid-city" is not supported.');
   await expect(page.getByLabel("Choose a city")).toHaveValue("toronto");
   await expect(page.locator("tbody tr")).toHaveCount(30);
   await expect(page.locator("tbody")).toContainText("2026-04-08");
