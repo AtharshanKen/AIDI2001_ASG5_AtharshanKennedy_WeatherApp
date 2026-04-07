@@ -184,6 +184,6 @@ test("GET / in local mode renders a full 30-day forecast table for the selected 
   assert.match(html, /2026-04-08/);
   assert.match(html, /2026-05-07/);
   assert.match(html, /class="forecast-table-scroll"/);
-  assert.match(html, /\.forecast-table-scroll\s*\{[\s\S]*max-height:\s*32rem;/);
+  assert.match(html, /\.forecast-table-scroll\s*\{[\s\S]*max-height:\s*12rem;/);
   assert.match(html, /\.forecast-table-scroll\s*\{[\s\S]*overflow-y:\s*auto;/);
 });
