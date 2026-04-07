@@ -16,13 +16,36 @@ on:
 jobs:
   run-weather-etl:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     env:
-      WEATHER_STORAGE_MODE: ${{ vars.WEATHER_STORAGE_MODE }}
+      WEATHER_STORAGE_MODE: ${{ github.event.inputs.storage_mode || vars.WEATHER_STORAGE_MODE || 'local' }}
       WEATHER_BUCKET_NAME: ${{ vars.WEATHER_BUCKET_NAME }}
       WEATHER_BUCKET_PREFIX: ${{ vars.WEATHER_BUCKET_PREFIX }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
+      GCP_CREDENTIALS_JSON: ${{ secrets.GCP_CREDENTIALS_JSON }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud with Workload Identity Federation
+        if: ${{ env.WEATHER_STORAGE_MODE == 'gcp' && env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' }}
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: Authenticate to Google Cloud with service account key fallback
+        if: ${{ env.WEATHER_STORAGE_MODE == 'gcp' && env.GCP_WORKLOAD_IDENTITY_PROVIDER == '' && env.GCP_CREDENTIALS_JSON != '' }}
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ env.GCP_CREDENTIALS_JSON }}
+
+      - name: Set up gcloud
+        if: ${{ env.WEATHER_STORAGE_MODE == 'gcp' }}
+        uses: google-github-actions/setup-gcloud@v3
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -36,8 +59,20 @@ jobs:
         shell: bash
         env:
           RUN_DATE_INPUT: ${{ github.event.inputs.run_date }}
-          STORAGE_MODE_INPUT: ${{ github.event.inputs.storage_mode }}
         run: |
           RUN_DATE="${RUN_DATE_INPUT:-$(date -u +%F)}"
-          export WEATHER_STORAGE_MODE="${STORAGE_MODE_INPUT:-${WEATHER_STORAGE_MODE:-local}}"
+          if [[ "${WEATHER_STORAGE_MODE}" == "gcp" ]]; then
+            if [[ -z "${WEATHER_BUCKET_NAME}" ]]; then
+              echo "WEATHER_BUCKET_NAME is required for gcp storage mode."
+              exit 1
+            fi
+
+            if [[ -z "${GCP_WORKLOAD_IDENTITY_PROVIDER}" && -z "${GCP_CREDENTIALS_JSON}" ]]; then
+              echo "Configure either Workload Identity Federation or GCP_CREDENTIALS_JSON for gcp storage mode."
+              exit 1
+            fi
+
+            gcloud storage ls "gs://${WEATHER_BUCKET_NAME}" >/dev/null
+          fi
+
           python -m weather_etl.cli run --all --output-root data/local --run-date "$RUN_DATE"

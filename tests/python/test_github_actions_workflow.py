@@ -17,6 +17,14 @@ class GitHubActionsWorkflowTests(unittest.TestCase):
         self.assertIn("pip install -r requirements.txt", workflow_text)
         self.assertIn("python -m weather_etl.cli run --all", workflow_text)
         self.assertIn("WEATHER_STORAGE_MODE", workflow_text)
+        self.assertIn("permissions:", workflow_text)
+        self.assertIn("id-token: write", workflow_text)
+        self.assertIn("google-github-actions/auth@v3", workflow_text)
+        self.assertIn("google-github-actions/setup-gcloud@v3", workflow_text)
+        self.assertIn("workload_identity_provider", workflow_text)
+        self.assertIn("service_account", workflow_text)
+        self.assertIn("credentials_json", workflow_text)
+        self.assertIn("gcloud storage ls", workflow_text)
 
 
 if __name__ == "__main__":
