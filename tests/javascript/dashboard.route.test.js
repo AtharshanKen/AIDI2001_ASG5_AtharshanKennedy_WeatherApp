@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const test = require("node:test");
 
 const { createApp } = require("../../dashboard_app/app");
+const { createGoldRepositoryFromEnvironment } = require("../../dashboard_app/gold_repository_factory");
 
 const SAMPLE_GOLD_PAYLOAD = {
   metadata: {
@@ -38,6 +39,26 @@ const OTTAWA_GOLD_PAYLOAD = {
     },
   ],
 };
+
+class FakeFile {
+  constructor(payload) {
+    this.payload = payload;
+  }
+
+  async download() {
+    return [Buffer.from(JSON.stringify(this.payload), "utf-8")];
+  }
+}
+
+class FakeBucket {
+  constructor(filesByName) {
+    this.filesByName = filesByName;
+  }
+
+  file(name) {
+    return new FakeFile(this.filesByName[name]);
+  }
+}
 
 async function startServer(app) {
   return await new Promise((resolve) => {
@@ -161,6 +182,56 @@ test("GET / uses built-in sample Gold data for other supported cities in local m
   assert.match(html, /2026-04-10/);
   assert.match(html, /Rain/);
   assert.match(html, /Not Good/);
+});
+
+test("GET / can render bucket-backed Gold data when the repository is selected from environment config", async (t) => {
+  const torontoBucketPayload = {
+    metadata: {
+      city: "toronto",
+      run_date: "2026-04-07",
+    },
+    daily_forecasts: [
+      {
+        date: "2026-04-22",
+        avg_temp: 21.5,
+        weather_condition: "Clear Sky",
+        outing_score: 3,
+        outing_label: "Great Day",
+        outing_reason:
+          "Clear sky with comfortable temperatures, low wind, and little rain.",
+      },
+    ],
+  };
+  const bucket = new FakeBucket({
+    "weather-demo/gold/toronto_activity_forecast_2026-04-07.json": torontoBucketPayload,
+  });
+  const app = createApp({
+    goldRepository: createGoldRepositoryFromEnvironment({
+      env: {
+        DASHBOARD_GOLD_REPOSITORY_MODE: "gcp",
+        DASHBOARD_GCP_BUCKET_NAME: "assignment-weather",
+        DASHBOARD_GCP_BUCKET_PREFIX: "weather-demo",
+        DASHBOARD_GOLD_RUN_DATE: "2026-04-07",
+      },
+      loadBucket(bucketName) {
+        assert.equal(bucketName, "assignment-weather");
+        return bucket;
+      },
+    }),
+  });
+  const server = await startServer(app);
+
+  t.after(async () => {
+    await stopServer(server);
+  });
+
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/?city=toronto`);
+  const html = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(html, /2026-04-22/);
+  assert.match(html, /Clear Sky/);
+  assert.match(html, /Great Day/);
 });
 
 test("GET / in local mode renders a full 30-day forecast table for the selected city", async (t) => {

@@ -4,11 +4,11 @@ const { UnsupportedCityError, getCity, listCities } = require("./city_catalog");
 const { answerQuestion } = require("./answer_engine");
 const { formatAnswer } = require("./answer_formatter");
 const { buildDashboardViewModel } = require("./dashboard_view_model");
+const { createGoldRepositoryFromEnvironment } = require("./gold_repository_factory");
 const { UnsupportedQuestionError } = require("./question_catalog");
-const { createSampleGoldRepository } = require("./sample_gold_repository");
 const { renderDashboardPage } = require("./render_dashboard");
 
-function createApp({ goldRepository = createSampleGoldRepository() } = {}) {
+function createApp({ goldRepository = createGoldRepositoryFromEnvironment() } = {}) {
   const app = express();
 
   app.get("/", async (request, response, next) => {
