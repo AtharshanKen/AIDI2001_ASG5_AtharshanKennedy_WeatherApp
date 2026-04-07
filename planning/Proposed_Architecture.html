@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weather Dashboard Proposed Architecture</title>
+  <style>
+    :root {
+      --bg: #f4efe7;
+      --panel: #fffaf3;
+      --ink: #1f2a33;
+      --muted: #5e6a73;
+      --line: #7e8b95;
+      --source: #c8e7e1;
+      --compute: #f6d7a7;
+      --tier: #d7d8ff;
+      --storage: #c8dcff;
+      --app: #ffd8be;
+      --test: #cfecc9;
+      --llm: #ffd1da;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      background:
+        radial-gradient(circle at top left, #fff8ed 0%, transparent 30%),
+        radial-gradient(circle at bottom right, #e3f4f0 0%, transparent 28%),
+        linear-gradient(160deg, #efe8dc 0%, #f8f4ed 45%, #edf4f1 100%);
+      color: var(--ink);
+    }
+
+    .canvas {
+      position: relative;
+      width: 1600px;
+      height: 900px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .title {
+      position: absolute;
+      top: 36px;
+      left: 48px;
+      right: 48px;
+      padding: 24px 28px;
+      background: rgba(255, 250, 243, 0.88);
+      border: 1px solid rgba(31, 42, 51, 0.12);
+      border-radius: 26px;
+      box-shadow: 0 20px 40px rgba(31, 42, 51, 0.08);
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 38px;
+      letter-spacing: 0.4px;
+    }
+
+    .title p {
+      margin: 10px 0 0;
+      font-size: 18px;
+      color: var(--muted);
+    }
+
+    .lane-label {
+      position: absolute;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: rgba(255, 250, 243, 0.94);
+      border: 1px solid rgba(31, 42, 51, 0.12);
+      font-size: 16px;
+      letter-spacing: 0.3px;
+      color: var(--muted);
+    }
+
+    .card {
+      position: absolute;
+      width: 170px;
+      min-height: 110px;
+      padding: 16px 18px;
+      border-radius: 22px;
+      border: 1px solid rgba(31, 42, 51, 0.14);
+      box-shadow: 0 18px 28px rgba(31, 42, 51, 0.09);
+      background: var(--panel);
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 10px;
+      border-radius: 22px 0 0 22px;
+      background: var(--accent, var(--line));
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .card p {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+
+    .source { --accent: var(--source); }
+    .compute { --accent: var(--compute); }
+    .tier { --accent: var(--tier); }
+    .storage { --accent: var(--storage); }
+    .app { --accent: var(--app); }
+    .test { --accent: var(--test); }
+    .llm { --accent: var(--llm); }
+
+    .wide {
+      width: 220px;
+    }
+
+    .note {
+      position: absolute;
+      width: 320px;
+      padding: 18px 20px;
+      border-radius: 24px;
+      background: rgba(255, 250, 243, 0.92);
+      border: 1px solid rgba(31, 42, 51, 0.14);
+      box-shadow: 0 16px 28px rgba(31, 42, 51, 0.08);
+    }
+
+    .note h3 {
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+
+    .note p {
+      margin: 0;
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .legend {
+      position: absolute;
+      left: 48px;
+      bottom: 34px;
+      right: 48px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(255, 250, 243, 0.94);
+      border: 1px solid rgba(31, 42, 51, 0.12);
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+    }
+
+    svg {
+      position: absolute;
+      inset: 0;
+    }
+
+    .arrow {
+      stroke: rgba(39, 58, 70, 0.7);
+      stroke-width: 4;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .arrow-label {
+      font-size: 15px;
+      fill: #44525d;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas">
+    <div class="title">
+      <h1>Weather Dashboard for Outdoor Activity Days</h1>
+      <p>Revised architecture focused on one deterministic flow: Python ETL -> Gold data -> Express app -> grounded answers.</p>
+    </div>
+
+    <div class="lane-label" style="top: 146px; left: 52px;">Production flow</div>
+    <div class="lane-label" style="top: 522px; left: 52px;">Local development and test flow</div>
+
+    <div class="card source" style="left: 60px; top: 220px;">
+      <h2>Open-Meteo API</h2>
+      <p>Seasonal forecast source for the five fixed cities.</p>
+    </div>
+
+    <div class="card compute" style="left: 270px; top: 220px;">
+      <h2>Python ETL</h2>
+      <p>Extract, transform, score outing quality, and prepare app-ready data.</p>
+    </div>
+
+    <div class="card tier" style="left: 490px; top: 220px;">
+      <h2>Bronze</h2>
+      <p>Raw JSON response captured per city request date.</p>
+    </div>
+
+    <div class="card tier" style="left: 700px; top: 220px;">
+      <h2>Silver</h2>
+      <p>Cleaned detailed forecast with temp, wind, rain, and weather code.</p>
+    </div>
+
+    <div class="card tier" style="left: 910px; top: 220px;">
+      <h2>Gold</h2>
+      <p>Minimal app layer with avg temp, condition, outing score, label, and reason.</p>
+    </div>
+
+    <div class="card storage" style="left: 1120px; top: 220px;">
+      <h2>GCP Bucket</h2>
+      <p>Production storage for Bronze, Silver, and Gold objects.</p>
+    </div>
+
+    <div class="card app wide" style="left: 1330px; top: 182px;">
+      <h2>Express App on Vercel</h2>
+      <p>Reads Gold, renders the dashboard, and assembles deterministic answers for the three fixed questions.</p>
+    </div>
+
+    <div class="card app wide" style="left: 1330px; top: 356px;">
+      <h2>User Dashboard</h2>
+      <p>City drop-down, 30-day table, and three predefined question buttons.</p>
+    </div>
+
+    <div class="card test" style="left: 60px; top: 602px;">
+      <h2>Playwright</h2>
+      <p>Headed local e2e proof: select Toronto, see table, ask for great days.</p>
+    </div>
+
+    <div class="card storage" style="left: 270px; top: 602px;">
+      <h2>Local Gold Files</h2>
+      <p>Stable sample data for local development and repeatable browser testing.</p>
+    </div>
+
+    <div class="card llm" style="left: 1120px; top: 602px;">
+      <h2>OpenAI Formatting</h2>
+      <p>Turns deterministic answer payloads into short user-friendly text with template fallback.</p>
+    </div>
+
+    <div class="note" style="left: 640px; top: 552px;">
+      <h3>Question ownership</h3>
+      <p>ETL owns daily facts and outing scoring. The Express app owns question assembly: Q1 shows the 30-day table, Q2 computes the 7-day average, and Q3 filters upcoming Great Day results.</p>
+    </div>
+
+    <div class="legend">
+      <div class="chip"><span class="swatch" style="background: var(--source);"></span> Source data</div>
+      <div class="chip"><span class="swatch" style="background: var(--compute);"></span> Compute and transformation</div>
+      <div class="chip"><span class="swatch" style="background: var(--tier);"></span> Medallion layers</div>
+      <div class="chip"><span class="swatch" style="background: var(--storage);"></span> Storage</div>
+      <div class="chip"><span class="swatch" style="background: var(--app);"></span> App and UI</div>
+      <div class="chip"><span class="swatch" style="background: var(--test);"></span> Local testing</div>
+      <div class="chip"><span class="swatch" style="background: var(--llm);"></span> Formatting layer</div>
+    </div>
+
+    <svg viewBox="0 0 1600 900" aria-hidden="true">
+      <defs>
+        <marker id="arrowhead" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto">
+          <path d="M 0 0 L 12 5 L 0 10 z" fill="rgba(39, 58, 70, 0.7)"></path>
+        </marker>
+      </defs>
+
+      <path class="arrow" marker-end="url(#arrowhead)" d="M 230 275 C 245 275, 250 275, 270 275"></path>
+      <path class="arrow" marker-end="url(#arrowhead)" d="M 440 275 C 455 275, 465 275, 490 275"></path>
+      <path class="arrow" marker-end="url(#arrowhead)" d="M 660 275 C 670 275, 680 275, 700 275"></path>
+      <path class="arrow" marker-end="url(#arrowhead)" d="M 870 275 C 885 275, 895 275, 910 275"></path>
+      <path class="arrow" marker-end="url(#arrowhead)" d="M 1080 275 C 1095 275, 1105 275, 1120 275"></path>
+      <path class="arrow" marker-end="url(#arrowhead)" d="M 1290 275 C 1300 275, 1310 275, 1330 275"></path>
+      <path class="arrow" marker-end="url(#arrowhead)" d="M 1440 292 C 1440 315, 1440 330, 1440 356"></path>
+
+      <path class="arrow" marker-end="url(#arrowhead)" d="M 230 657 C 240 657, 250 657, 270 657"></path>
+      <path class="arrow" marker-end="url(#arrowhead)" d="M 440 657 C 840 657, 900 657, 1330 657"></path>
+      <path class="arrow" marker-end="url(#arrowhead)" d="M 1290 657 C 1305 657, 1315 657, 1330 657"></path>
+      <path class="arrow" marker-end="url(#arrowhead)" d="M 1450 602 C 1450 545, 1450 505, 1450 466"></path>
+      <path class="arrow" marker-end="url(#arrowhead)" d="M 1485 275 C 1540 275, 1540 410, 1485 410"></path>
+
+      <text class="arrow-label" x="1165" y="645">format only</text>
+      <text class="arrow-label" x="518" y="262">raw</text>
+      <text class="arrow-label" x="727" y="262">clean</text>
+      <text class="arrow-label" x="934" y="262">curate</text>
+      <text class="arrow-label" x="1448" y="336">render</text>
+      <text class="arrow-label" x="520" y="645">same app path in local mode</text>
+      <text class="arrow-label" x="1506" y="346" transform="rotate(90 1506 346)">UI shown to users</text>
+    </svg>
+  </div>
+</body>
+</html>
