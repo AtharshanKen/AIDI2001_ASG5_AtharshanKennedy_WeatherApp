@@ -108,12 +108,28 @@ function renderDashboardPage(viewModel) {
         width: 100%;
       }
 
+      .forecast-table-scroll {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        margin-top: 1rem;
+        max-height: 32rem;
+        overflow-y: auto;
+        overflow-x: auto;
+      }
+
       th,
       td {
         border-bottom: 1px solid var(--border);
         padding: 0.85rem 0.5rem;
         text-align: left;
         vertical-align: top;
+      }
+
+      th {
+        background: rgba(244, 239, 228, 0.96);
+        position: sticky;
+        top: 0;
+        z-index: 1;
       }
 
       .question-list {
@@ -147,18 +163,20 @@ function renderDashboardPage(viewModel) {
         <h1>Weather Activity Dashboard</h1>
         ${errorBanner}
         <h2>30-Day Forecast</h2>
-        <table aria-label="30-day forecast table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Average Temperature</th>
-              <th>Condition</th>
-              <th>Outing Label</th>
-              <th>Reason</th>
-            </tr>
-          </thead>
-          <tbody>${forecastRows}</tbody>
-        </table>
+        <div class="forecast-table-scroll">
+          <table aria-label="30-day forecast table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Average Temperature</th>
+                <th>Condition</th>
+                <th>Outing Label</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>${forecastRows}</tbody>
+          </table>
+        </div>
       </section>
       <aside>
         <section class="panel">

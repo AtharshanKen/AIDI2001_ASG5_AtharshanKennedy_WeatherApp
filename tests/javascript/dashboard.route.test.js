@@ -108,13 +108,13 @@ test("GET / with an unsupported city renders a graceful dashboard error state", 
     await stopServer(server);
   });
 
-  const response = await fetch(`http://127.0.0.1:${server.address().port}/?city=halifax`);
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/?city=invalid-city`);
   const html = await response.text();
 
   assert.equal(response.status, 400);
   assert.match(html, /Weather Activity Dashboard/);
   assert.match(html, /Unsupported city/);
-  assert.match(html, /City "halifax" is not supported\./);
+  assert.match(html, /City "invalid-city" is not supported\./);
   assert.match(html, /<option value="toronto" selected>Toronto<\/option>/);
   assert.match(html, /30-Day Forecast/);
 });
@@ -183,4 +183,7 @@ test("GET / in local mode renders a full 30-day forecast table for the selected 
   assert.equal(rowCount, 30);
   assert.match(html, /2026-04-08/);
   assert.match(html, /2026-05-07/);
+  assert.match(html, /class="forecast-table-scroll"/);
+  assert.match(html, /\.forecast-table-scroll\s*\{[\s\S]*max-height:\s*32rem;/);
+  assert.match(html, /\.forecast-table-scroll\s*\{[\s\S]*overflow-y:\s*auto;/);
 });
