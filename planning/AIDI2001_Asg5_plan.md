@@ -15,7 +15,6 @@ Weather Dashboard for Outdoor Activity Days
 - The PRDs should use meaningful vertical slices and include Playwright-based UI testing in non-headless mode.
 - Development will be done on the main branch using GitHub.
 - Platform complexity should be avoided.
-- The team should not build everything at once. It is better to prove one narrow flow end-to-end than to partially build several disconnected features.
 
 ### What the Project Does
 
