@@ -21,7 +21,7 @@ jobs:
       contents: read
       id-token: write
     env:
-      WEATHER_STORAGE_MODE: ${{ github.event.inputs.storage_mode || vars.WEATHER_STORAGE_MODE || 'local' }}
+      WORKFLOW_STORAGE_MODE: ${{ github.event.inputs.storage_mode || vars.WEATHER_STORAGE_MODE || 'local' }}
       WEATHER_BUCKET_NAME: ${{ vars.WEATHER_BUCKET_NAME }}
       WEATHER_BUCKET_PREFIX: ${{ vars.WEATHER_BUCKET_PREFIX }}
       GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
@@ -31,21 +31,42 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Resolve workflow run date
+        shell: bash
+        env:
+          RUN_DATE_INPUT: ${{ github.event.inputs.run_date }}
+        run: |
+          echo "RUN_DATE=${RUN_DATE_INPUT:-$(date -u +%F)}" >> "$GITHUB_ENV"
+
+      - name: Validate GCP workflow configuration
+        if: ${{ env.WORKFLOW_STORAGE_MODE == 'gcp' }}
+        shell: bash
+        run: |
+          if [[ -z "${WEATHER_BUCKET_NAME}" ]]; then
+            echo "WEATHER_BUCKET_NAME is required for gcp storage mode."
+            exit 1
+          fi
+
+          if [[ -z "${GCP_WORKLOAD_IDENTITY_PROVIDER}" && -z "${GCP_CREDENTIALS_JSON}" ]]; then
+            echo "Configure either Workload Identity Federation or GCP_CREDENTIALS_JSON for gcp storage mode."
+            exit 1
+          fi
+
       - name: Authenticate to Google Cloud with Workload Identity Federation
-        if: ${{ env.WEATHER_STORAGE_MODE == 'gcp' && env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' }}
+        if: ${{ env.WORKFLOW_STORAGE_MODE == 'gcp' && env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT != '' }}
         uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
 
       - name: Authenticate to Google Cloud with service account key fallback
-        if: ${{ env.WEATHER_STORAGE_MODE == 'gcp' && env.GCP_WORKLOAD_IDENTITY_PROVIDER == '' && env.GCP_CREDENTIALS_JSON != '' }}
+        if: ${{ env.WORKFLOW_STORAGE_MODE == 'gcp' && env.GCP_WORKLOAD_IDENTITY_PROVIDER == '' && env.GCP_CREDENTIALS_JSON != '' }}
         uses: google-github-actions/auth@v3
         with:
           credentials_json: ${{ env.GCP_CREDENTIALS_JSON }}
 
       - name: Set up gcloud
-        if: ${{ env.WEATHER_STORAGE_MODE == 'gcp' }}
+        if: ${{ env.WORKFLOW_STORAGE_MODE == 'gcp' }}
         uses: google-github-actions/setup-gcloud@v3
 
       - name: Set up Python
@@ -59,21 +80,38 @@ jobs:
       - name: Run ETL for all supported cities
         shell: bash
         env:
-          RUN_DATE_INPUT: ${{ github.event.inputs.run_date }}
+          WEATHER_STORAGE_MODE: local
         run: |
-          RUN_DATE="${RUN_DATE_INPUT:-$(date -u +%F)}"
-          if [[ "${WEATHER_STORAGE_MODE}" == "gcp" ]]; then
-            if [[ -z "${WEATHER_BUCKET_NAME}" ]]; then
-              echo "WEATHER_BUCKET_NAME is required for gcp storage mode."
-              exit 1
-            fi
+          python -m weather_etl.cli run --all --output-root data/local --run-date "$RUN_DATE"
 
-            if [[ -z "${GCP_WORKLOAD_IDENTITY_PROVIDER}" && -z "${GCP_CREDENTIALS_JSON}" ]]; then
-              echo "Configure either Workload Identity Federation or GCP_CREDENTIALS_JSON for gcp storage mode."
-              exit 1
-            fi
-
-            gcloud storage ls "gs://${WEATHER_BUCKET_NAME}" >/dev/null
+      - name: Resolve Cloud Storage upload destination
+        if: ${{ env.WORKFLOW_STORAGE_MODE == 'gcp' }}
+        shell: bash
+        run: |
+          if [[ -n "${WEATHER_BUCKET_PREFIX}" ]]; then
+            echo "UPLOAD_DESTINATION=${WEATHER_BUCKET_NAME}/${WEATHER_BUCKET_PREFIX}" >> "$GITHUB_ENV"
+          else
+            echo "UPLOAD_DESTINATION=${WEATHER_BUCKET_NAME}" >> "$GITHUB_ENV"
           fi
 
-          python -m weather_etl.cli run --all --output-root data/local --run-date "$RUN_DATE"
+      - name: Upload ETL artifacts to Cloud Storage
+        if: ${{ env.WORKFLOW_STORAGE_MODE == 'gcp' }}
+        uses: google-github-actions/upload-cloud-storage@v3
+        with:
+          path: data/local
+          destination: ${{ env.UPLOAD_DESTINATION }}
+          parent: false
+          process_gcloudignore: false
+
+      - name: Verify uploaded bucket objects for this run date
+        if: ${{ env.WORKFLOW_STORAGE_MODE == 'gcp' }}
+        shell: bash
+        run: |
+          echo "Uploaded objects for run date ${RUN_DATE}:"
+          MATCHED_OBJECTS="$(gcloud storage ls "gs://${UPLOAD_DESTINATION}/**" | grep "${RUN_DATE}" || true)"
+          if [[ -z "${MATCHED_OBJECTS}" ]]; then
+            echo "No uploaded bucket objects were found for run date ${RUN_DATE}."
+            exit 1
+          fi
+
+          echo "${MATCHED_OBJECTS}"
