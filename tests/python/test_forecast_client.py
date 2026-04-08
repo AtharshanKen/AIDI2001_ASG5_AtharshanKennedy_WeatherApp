@@ -142,6 +142,73 @@ class ForecastClientTests(unittest.TestCase):
             ):
                 fetch_forecast(city)
 
+    def test_fetch_forecast_normalizes_numpy_like_values_to_plain_python_numbers(self) -> None:
+        class FakeNumpyArray:
+            def __init__(self, values):
+                self._values = values
+
+            def tolist(self):
+                return list(self._values)
+
+        class FakeVariable:
+            def __init__(self, values):
+                self._values = values
+
+            def ValuesAsNumpy(self):
+                return FakeNumpyArray(self._values)
+
+        class FakeDaily:
+            def __init__(self):
+                self._variables = [
+                    FakeVariable([7.25, 8.5]),
+                    FakeVariable([14.75, 15.0]),
+                    FakeVariable([0.2, 0.4]),
+                    FakeVariable([12.0, 18.0]),
+                    FakeVariable([1, 3]),
+                ]
+
+            def Time(self):
+                return 1775606400
+
+            def TimeEnd(self):
+                return 1775779200
+
+            def Interval(self):
+                return 86400
+
+            def Variables(self, index):
+                return self._variables[index]
+
+        class FakeResponse:
+            def Daily(self):
+                return FakeDaily()
+
+        fake_client = MagicMock(name="openmeteo_client")
+        fake_client.weather_api.return_value = [FakeResponse()]
+        city = {
+            "id": "toronto",
+            "latitude": 43.6532,
+            "longitude": -79.3832,
+            "timezone": "America/Toronto",
+        }
+
+        with patch(
+            "weather_etl.forecast_client.build_openmeteo_client",
+            return_value=fake_client,
+        ):
+            from weather_etl.forecast_client import fetch_forecast
+
+            forecast = fetch_forecast(city)
+
+        self.assertEqual(forecast["daily"]["temperature_2m_min"], [7.25, 8.5])
+        self.assertTrue(
+            all(isinstance(value, float) for value in forecast["daily"]["temperature_2m_min"])
+        )
+        self.assertEqual(forecast["daily"]["weather_code"], [1, 3])
+        self.assertTrue(
+            all(isinstance(value, int) for value in forecast["daily"]["weather_code"])
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
