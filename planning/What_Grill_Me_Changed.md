@@ -103,7 +103,6 @@ The original plan already had the right end-to-end workflow, but several importa
 The revised plan is:
 
 - simpler to implement
-- easier to explain to the professor
 - more deterministic
 - easier to test locally
 - more clearly split across Bronze, Silver, and Gold

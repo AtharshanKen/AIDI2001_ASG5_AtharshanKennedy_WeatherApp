@@ -38,7 +38,7 @@ This document captures the recommended issue order for test-driven development w
 - Issue `#6`: One all-city ETL run creates outputs for all five supported cities.
 - Issue `#8`: One representative Silver record transforms into one correct Gold record with the expected average temperature and outing label.
 - Issue `#9`: The main dashboard route renders a page with one selected city and a visible 30-day forecast table.
-- Issue `#11`: A Playwright test opens the dashboard and confirms the forecast table is visible for a supported city.
+- Issue `#11`: A headed Playwright test opens the dashboard and confirms the forecast table is visible for a supported city.
 - Issue `#12`: One supported question returns one deterministic structured answer payload from Gold data.
 - Issue `#13`: The answer endpoint returns a readable fallback response when the formatter is disabled or unavailable.
 - Issue `#14`: A headed Playwright test selects a city, clicks a supported question, and verifies that a grounded answer appears.
