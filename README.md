@@ -23,16 +23,6 @@ Open-Meteo Seasonal API
   -> Optional OpenAI answer formatting
 ```
 
-## Repository Structure
-
-- [`weather_etl/`](./weather_etl) Python ETL package
-- [`dashboard_app/`](./dashboard_app) Express dashboard application
-- [`tests/python/`](./tests/python) Python ETL and workflow tests
-- [`tests/javascript/`](./tests/javascript) Node/Express behavior tests
-- [`tests/playwright/`](./tests/playwright) headed browser and end-to-end evidence tests
-- [`data/`](./data) checked-in sample Bronze, Silver, and Gold artifacts
-- [`.github/workflows/weather-etl.yml`](./.github/workflows/weather-etl.yml) manual and scheduled ETL workflow
-
 ## ETL Layers
 
 ### Bronze
@@ -63,30 +53,8 @@ Example:
 
 ## GitHub Actions ETL
 
-The ETL workflow supports:
-
-- manual runs with `workflow_dispatch`
-- daily scheduled runs with cron
-
 Workflow file:
 - [`.github/workflows/weather-etl.yml`](./.github/workflows/weather-etl.yml)
-
-In `gcp` mode the workflow:
-
-1. runs the ETL locally on the GitHub runner into `data/local`
-2. uploads Bronze, Silver, and Gold artifacts to Cloud Storage
-3. verifies that uploaded objects exist for the run date
-
-## Dashboard Bucket-Backed Mode
-
-The dashboard supports two repository modes:
-
-- `local`
-- `gcp`
-
-When `DASHBOARD_GOLD_REPOSITORY_MODE=gcp`, the dashboard reads Gold artifacts from Google Cloud Storage.
-
-The dashboard can automatically discover the latest dated Gold object for each city, so `DASHBOARD_GOLD_RUN_DATE` is not required anymore.
 
 ## OpenAI Integration
 
@@ -94,49 +62,7 @@ The answer engine is deterministic first. OpenAI is used only as an optional for
 
 If OpenAI is unavailable or disabled, the dashboard falls back to deterministic plain-text answers.
 
-## Testing
-
-### JavaScript / Express tests
-
-```powershell
-npm test
-```
-
-### Python tests
-
-```powershell
-python -m unittest discover -s tests/python -p "test_*.py" -v
-```
-
-### Playwright tests
-
-Automated Playwright run:
-
-```powershell
-npm run test:playwright
-```
-
-Headed evidence mode that stays open until you close the browser:
-
-```powershell
-npm run test:playwright:evidence -- tests/playwright/dashboard.spec.js
-```
-
-Bucket-backed Playwright smoke test:
-
-```powershell
-npm run test:playwright:evidence -- tests/playwright/dashboard.bucket.spec.js
-```
-
-Question-answer end-to-end flow:
-
-```powershell
-npm run test:playwright:evidence -- tests/playwright/question-answer.spec.js
-```
-
 ### Playwright evidence files
-
-Playwright test files are in:
 
 - [`tests/playwright/dashboard.spec.js`](./tests/playwright/dashboard.spec.js)
 - [`tests/playwright/dashboard.bucket.spec.js`](./tests/playwright/dashboard.bucket.spec.js)
@@ -151,9 +77,3 @@ ETL orchestration behavior was spread across separate one-city, multi-city, and 
 ### After
 
 The ETL now uses a deeper runner boundary in [`weather_etl/pipeline.py`](./weather_etl/pipeline.py) through `WeatherEtlRunner`, so one-city runs, all-city runs, and artifact writing are coordinated behind a smaller public interface. The Python tests are more centered on behavior at that boundary instead of repeating the same ETL story across multiple shallow files.
-
-## Deployment Notes
-
-- The repo root includes [`app.js`](./app.js) so Vercel can detect the Express entrypoint.
-- The dashboard can run from local sample Gold data or live GCP bucket-backed Gold data.
-- The GitHub Actions ETL pipeline and the deployed dashboard were verified end to end with real bucket uploads and reads.
