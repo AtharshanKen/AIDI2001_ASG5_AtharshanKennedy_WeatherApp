@@ -1,4 +1,7 @@
-# AIDI2001 ASG5 Weather Activity Dashboard
+# AIDI2001 ASG5 Weather Activity Dashboard\
+
+## Vercel URL:
+https://aidi-2001-asg-5-atharshan-kennedy-weather-ga52jfhbd.vercel.app
 
 This project builds a weather ETL pipeline and dashboard for five supported Canadian cities:
 
