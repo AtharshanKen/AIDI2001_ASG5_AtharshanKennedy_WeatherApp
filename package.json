@@ -11,6 +11,7 @@
     "demo:dashboard": "node scripts/open_dashboard_demo.js"
   },
   "dependencies": {
+    "@google-cloud/storage": "^7.19.0",
     "express": "^5.2.1"
   },
   "devDependencies": {
