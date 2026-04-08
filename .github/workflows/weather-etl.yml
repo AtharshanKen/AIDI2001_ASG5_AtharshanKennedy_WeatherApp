@@ -16,6 +16,7 @@ on:
 jobs:
   run-weather-etl:
     runs-on: ubuntu-latest
+    environment: AIDI2001_Asg5_Env
     permissions:
       contents: read
       id-token: write

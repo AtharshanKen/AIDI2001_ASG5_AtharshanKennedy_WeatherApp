@@ -17,6 +17,7 @@ class GitHubActionsWorkflowTests(unittest.TestCase):
         self.assertIn("pip install -r requirements.txt", workflow_text)
         self.assertIn("python -m weather_etl.cli run --all", workflow_text)
         self.assertIn("WEATHER_STORAGE_MODE", workflow_text)
+        self.assertIn("environment: AIDI2001_Asg5_Env", workflow_text)
         self.assertIn("permissions:", workflow_text)
         self.assertIn("id-token: write", workflow_text)
         self.assertIn("google-github-actions/auth@v3", workflow_text)
