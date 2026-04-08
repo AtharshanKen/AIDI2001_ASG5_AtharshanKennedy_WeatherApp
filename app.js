@@ -1,3 +1,6 @@
-const { createApp } = require("./dashboard_app/app");
+const express = require("express");
+const { configureApp } = require("./dashboard_app/app");
 
-module.exports = createApp();
+const app = express();
+
+module.exports = configureApp(app);

@@ -1,5 +1,3 @@
-const express = require("express");
-
 const { UnsupportedCityError, getCity, listCities } = require("./city_catalog");
 const { answerQuestion } = require("./answer_engine");
 const { formatAnswer } = require("./answer_formatter");
@@ -8,9 +6,7 @@ const { createGoldRepositoryFromEnvironment } = require("./gold_repository_facto
 const { UnsupportedQuestionError } = require("./question_catalog");
 const { renderDashboardPage } = require("./render_dashboard");
 
-function createApp({ goldRepository = createGoldRepositoryFromEnvironment() } = {}) {
-  const app = express();
-
+function configureApp(app, { goldRepository = createGoldRepositoryFromEnvironment() } = {}) {
   app.get("/", async (request, response, next) => {
     try {
       let selectedCity = getCity("toronto");
@@ -88,6 +84,12 @@ function createApp({ goldRepository = createGoldRepositoryFromEnvironment() } = 
   return app;
 }
 
+function createApp({ express = require("express"), goldRepository = createGoldRepositoryFromEnvironment() } = {}) {
+  const app = express();
+  return configureApp(app, { goldRepository });
+}
+
 module.exports = {
+  configureApp,
   createApp,
 };
