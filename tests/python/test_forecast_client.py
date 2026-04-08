@@ -93,6 +93,8 @@ class ForecastClientTests(unittest.TestCase):
                 "latitude": 43.6532,
                 "longitude": -79.3832,
                 "timezone": "America/Toronto",
+                "forecast_days": 30,
+                "models": "ecmwf_ec46_ensemble_mean",
                 "daily": [
                     "temperature_2m_min",
                     "temperature_2m_max",

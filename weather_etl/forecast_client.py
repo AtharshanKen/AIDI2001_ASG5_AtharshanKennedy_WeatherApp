@@ -6,6 +6,8 @@ from retry_requests import retry
 
 
 SEASONAL_API_URL = "https://seasonal-api.open-meteo.com/v1/seasonal"
+SEASONAL_MODEL = "ecmwf_ec46_ensemble_mean"
+FORECAST_DAYS = 30
 DAILY_FIELDS = [
     "temperature_2m_min",
     "temperature_2m_max",
@@ -27,6 +29,8 @@ def fetch_forecast(city: dict) -> dict:
         "latitude": city["latitude"],
         "longitude": city["longitude"],
         "timezone": city["timezone"],
+        "forecast_days": FORECAST_DAYS,
+        "models": SEASONAL_MODEL,
         "daily": DAILY_FIELDS,
     }
     responses = client.weather_api(SEASONAL_API_URL, params=params)

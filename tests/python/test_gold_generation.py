@@ -113,6 +113,27 @@ class GoldGenerationTests(unittest.TestCase):
             "Rain with 8.0 mm precipitation, 42.0 km/h wind, and a cool 7.0 C average temperature.",
         )
 
+    def test_generate_gold_payload_maps_supported_seasonal_weather_codes(self) -> None:
+        silver_payload = {
+            "metadata": {"city": "toronto", "run_date": "2026-04-07"},
+            "daily_forecasts": [
+                {
+                    "date": "2026-04-12",
+                    "temp_min": -2.0,
+                    "temp_max": 4.0,
+                    "precipitation_sum": 2.0,
+                    "wind_speed_max": 18.0,
+                    "weather_code": 85,
+                }
+            ],
+        }
+
+        gold_payload = generate_gold_payload(silver_payload)
+        gold_record = gold_payload["daily_forecasts"][0]
+
+        self.assertEqual(gold_record["weather_condition"], "Light Snow Showers")
+        self.assertIn("Light Snow Showers", gold_record["outing_reason"])
+
 
 if __name__ == "__main__":
     unittest.main()
