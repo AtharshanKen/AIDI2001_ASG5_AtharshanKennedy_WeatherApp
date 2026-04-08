@@ -3,10 +3,17 @@ const { answerQuestion } = require("./answer_engine");
 const { formatAnswer } = require("./answer_formatter");
 const { buildDashboardViewModel } = require("./dashboard_view_model");
 const { createGoldRepositoryFromEnvironment } = require("./gold_repository_factory");
+const { createOpenAiFormattingFromEnvironment } = require("./openai_formatter");
 const { UnsupportedQuestionError } = require("./question_catalog");
 const { renderDashboardPage } = require("./render_dashboard");
 
-function configureApp(app, { goldRepository = createGoldRepositoryFromEnvironment() } = {}) {
+function configureApp(
+  app,
+  {
+    goldRepository = createGoldRepositoryFromEnvironment(),
+    answerFormatting = createOpenAiFormattingFromEnvironment(),
+  } = {},
+) {
   app.get("/", async (request, response, next) => {
     try {
       let selectedCity = getCity("toronto");
@@ -45,7 +52,8 @@ function configureApp(app, { goldRepository = createGoldRepositoryFromEnvironmen
             questionLabel: answerPayload.questionLabel,
             text: await formatAnswer({
               answerPayload,
-              openAiEnabled: false,
+              openAiEnabled: answerFormatting.openAiEnabled,
+              openAiFormatter: answerFormatting.openAiFormatter,
             }),
           };
         } catch (error) {
@@ -84,9 +92,13 @@ function configureApp(app, { goldRepository = createGoldRepositoryFromEnvironmen
   return app;
 }
 
-function createApp({ express = require("express"), goldRepository = createGoldRepositoryFromEnvironment() } = {}) {
+function createApp({
+  express = require("express"),
+  goldRepository = createGoldRepositoryFromEnvironment(),
+  answerFormatting = createOpenAiFormattingFromEnvironment(),
+} = {}) {
   const app = express();
-  return configureApp(app, { goldRepository });
+  return configureApp(app, { goldRepository, answerFormatting });
 }
 
 module.exports = {

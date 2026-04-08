@@ -276,3 +276,36 @@ test("GET / in local mode renders a full 30-day forecast table for the selected 
   assert.match(html, /\.forecast-table-scroll\s*\{[\s\S]*min-height:\s*0;/);
   assert.match(html, /\.forecast-table-scroll\s*\{[\s\S]*overflow-y:\s*auto;/);
 });
+
+test("GET / with OpenAI formatting enabled renders the formatter output for a supported question", async (t) => {
+  const app = createApp({
+    goldRepository: {
+      async readCityForecast() {
+        return SAMPLE_GOLD_PAYLOAD;
+      },
+    },
+    answerFormatting: {
+      openAiEnabled: true,
+      openAiFormatter: {
+        async formatAnswer(answerPayload) {
+          assert.equal(answerPayload.questionId, "q2_7_day_average_temp");
+          return "OpenAI formatted answer: Toronto should average 20.0 C over the next 7 days.";
+        },
+      },
+    },
+  });
+  const server = await startServer(app);
+
+  t.after(async () => {
+    await stopServer(server);
+  });
+
+  const response = await fetch(
+    `http://127.0.0.1:${server.address().port}/?questionId=q2_7_day_average_temp`,
+  );
+  const html = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.match(html, /Answer/);
+  assert.match(html, /OpenAI formatted answer: Toronto should average 20.0 C over the next 7 days\./);
+});
