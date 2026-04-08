@@ -1,4 +1,5 @@
 google-cloud-storage
+numpy
 openmeteo-requests
 requests-cache
 retry-requests
