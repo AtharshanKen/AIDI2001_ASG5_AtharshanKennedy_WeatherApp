@@ -3,6 +3,7 @@ const test = require("node:test");
 
 const {
   DEFAULT_OPENAI_MODEL,
+  FORMATTER_INSTRUCTIONS,
   createOpenAiFormattingFromEnvironment,
 } = require("../../dashboard_app/openai_formatter");
 
@@ -66,10 +67,49 @@ test("OpenAI formatter uses the Responses API with the configured model and grou
   assert.equal(requests.length, 1);
   assert.equal(requests[0].apiKey, "sk-test");
   assert.equal(requests[0].request.model, "gpt-5.4-mini");
-  assert.equal(requests[0].request.max_output_tokens, 160);
-  assert.match(requests[0].request.instructions, /Do not add, remove, or change facts/);
+  assert.equal(requests[0].request.max_output_tokens, 240);
+  assert.equal(requests[0].request.instructions, FORMATTER_INSTRUCTIONS);
+  assert.match(
+    requests[0].request.instructions,
+    /Make the answer sound friendly, natural, polished, and helpful while staying fully factual/,
+  );
+  assert.match(requests[0].request.instructions, /Use only the grounded facts provided/);
+  assert.match(
+    requests[0].request.instructions,
+    /Keep every date, temperature, city name, count, condition, and reason exactly unchanged/,
+  );
+  assert.match(requests[0].request.instructions, /Do not add, remove, infer, generalize, soften, or merge facts/);
+  assert.match(requests[0].request.instructions, /Answer the user's question directly in the first sentence/);
+  assert.match(requests[0].request.instructions, /Prefer natural conversational wording over stiff summary wording/);
+  assert.match(
+    requests[0].request.instructions,
+    /Rewrite awkward phrasing into smoother plain English while preserving the exact facts/,
+  );
+  assert.match(
+    requests[0].request.instructions,
+    /Write from the provided facts instead of rephrasing a prewritten summary/,
+  );
+  assert.match(
+    requests[0].request.instructions,
+    /If startDate and endDate are provided, you may describe them as an exact date range using both dates/,
+  );
+  assert.match(
+    requests[0].request.instructions,
+    /If many dates are provided, keep the response concise and readable/,
+  );
+  assert.match(
+    requests[0].request.instructions,
+    /Do not list unnecessary extra details for every date unless the question explicitly asks for them/,
+  );
+  assert.match(
+    requests[0].request.instructions,
+    /If the answer includes many Great Day dates, prioritize readability and keep the wording brief while preserving the dates/,
+  );
+
   assert.match(requests[0].request.input, /questionLabel/);
+  assert.match(requests[0].request.input, /answerType/);
   assert.match(requests[0].request.input, /averageTempC/);
+  assert.doesNotMatch(requests[0].request.input, /"summary"/);
 });
 
 test("OpenAI formatter uses the default model when none is configured", async () => {
