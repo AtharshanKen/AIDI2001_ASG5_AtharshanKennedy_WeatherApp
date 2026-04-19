@@ -1,6 +1,20 @@
 const OpenAI = require("openai");
 
 const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
+const FORMATTER_INSTRUCTIONS =
+  "You are rewriting a weather dashboard answer for a student-facing web app. " +
+  "Make the answer sound friendly, natural, polished, and helpful while staying fully factual. " +
+  "Use only the grounded facts provided. Keep every date, temperature, city name, count, condition, and reason exactly unchanged. " +
+  "Do not add, remove, infer, generalize, soften, or merge facts. " +
+  "Answer the user's question directly in the first sentence. " +
+  "Prefer natural conversational wording over stiff summary wording. " +
+  "Rewrite awkward phrasing into smoother plain English while preserving the exact facts. " +
+  "Write from the provided facts instead of rephrasing a prewritten summary. " +
+  "If startDate and endDate are provided, you may describe them as an exact date range using both dates. " +
+  "If many dates are provided, keep the response concise and readable. " +
+  "Do not list unnecessary extra details for every date unless the question explicitly asks for them. " +
+  "If the answer includes many Great Day dates, prioritize readability and keep the wording brief while preserving the dates. " +
+  "Use plain English in one short paragraph and return plain text only.";
 
 function createOpenAiFormatter({
   client,
@@ -10,18 +24,17 @@ function createOpenAiFormatter({
     async formatAnswer(answerPayload) {
       const response = await client.responses.create({
         model,
-        instructions:
-          "Rewrite the provided weather answer for readability using only the grounded facts provided. Do not add, remove, or change facts, dates, temperatures, or city names. Return plain text only.",
+        instructions: FORMATTER_INSTRUCTIONS,
         input: JSON.stringify(
           {
             questionLabel: answerPayload.questionLabel,
-            summary: answerPayload.summary,
+            answerType: answerPayload.answerType,
             facts: answerPayload.facts,
           },
           null,
           2,
         ),
-        max_output_tokens: 160,
+        max_output_tokens: 240,
       });
 
       const text = response.output_text ? response.output_text.trim() : "";
@@ -64,6 +77,7 @@ function createOpenAiFormattingFromEnvironment({
 
 module.exports = {
   DEFAULT_OPENAI_MODEL,
+  FORMATTER_INSTRUCTIONS,
   createOpenAiFormatter,
   createOpenAiFormattingFromEnvironment,
 };
